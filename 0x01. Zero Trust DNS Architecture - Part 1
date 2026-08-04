@@ -19,12 +19,18 @@
    ░             ░       ░                                                     
  ░                                                                             
  
-================================================================================
-TITLE:    Zero-Trust DNS Architecture - Part 1
-SUBTITLE: Mitigating Advanced Data Exfiltration and Covert Channels via
-          L3/L4 Network Isolation
-AUTHOR:   0xGeorge W. Aravidis - August 04, 2026
-================================================================================
++-------------------------------------------------------------------------+
+| TITLE:    Zero-Trust DNS Architecture - Part 1                          |
+| SUBTITLE: Mitigating Advanced Data Exfiltration and Covert Channels via |
+|           L3/L4 Network Isolation                                       |
+|                                                                         |
+| AUTHOR:   0xGeorge W. Aravidis - August 04, 2026                        |
+| Cybersicherheitsforschung                                               | 
+|                                                                         |
+| Ulm Söflingen | Deutschland                                             |
+| Email address # csec.unbutton326@passinbox.com                          |
+|                                                                         |
++-------------------------------------------------------------------------+
 
 [ 1.1 Introduction: The Evolution of Malware Payloads ]
 
@@ -103,4 +109,4 @@ We will aggressively implement L3/L4 network isolation. Examples include:
 In this architecture, packets do not have rights; they only have 
 explicit permissions. Welcome to the void.
 
-[EOF - Part 1].
+[EOF - Part 1]
