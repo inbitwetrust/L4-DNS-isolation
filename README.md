@@ -1,2 +1,5 @@
-# L4-DNS-isolation
-Investigating L3/L4 network isolation techniques on Linux to constrain DNS-based exfiltration and DoH covert channels. This experimental architecture explores kernel-level routing and Anycast bootstrapping as a framework to limit rogue C2 callbacks.
+# L4-DNS-Isolation
+
+This repository hosts an exploratory architectural framework designed to investigate strict L3/L4 network isolation as a mechanism for mitigating DNS-based data exfiltration. Rather than relying on naive application-layer filters or trusting default egress policies, the project enforces hard kernel-level constraints to neuter rogue name resolution. In essence, it treats your outbound packets with the deep, unyielding suspicion they so richly deserve.
+
+At its technical core, the architecture leverages aggressive kernel parameter adjustments to deprecate vulnerable legacy stacks alongside deterministic packet-filtering rules. By surgically restricting Layer 4 transport traffic, any unauthorized attempt by malware or droppers to establish Command & Control (C2) callbacks via standard or encrypted channels is met with an uncompromising drop into the void. It is a pragmatic exercise in starving modern payloads of the one thing they cannot live without: a clear path to their masters.
